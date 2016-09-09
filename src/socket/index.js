@@ -50,6 +50,17 @@ export const startSocket = (store, socketConstructor = Socket) => {
     store.dispatch(startPolling(payload));
   };
 
+  const handleLeave = () => {
+    if (!channel) {
+      throw new Error("Leaving a channel when channel isn't joined");
+    }
+
+    channel.leave();
+    channel = null;
+    console.log("LEFT CHANNEL!");
+    store.dispatch(connectionClosed());
+  };
+
   const connectToSocket = ({ socket: socketState, worker }) => {
     const workerUUID = worker.get('uuid');
     const socketAuth = socketState.get('auth');
@@ -87,6 +98,9 @@ export const startSocket = (store, socketConstructor = Socket) => {
     });
     channel.on('start_polling', payload => {
       handleStartPolling(payload);
+    });
+    channel.on('leave', payload => {
+      handleLeave(payload);
     });
     channel.join()
       .receive('ok', resp => {
